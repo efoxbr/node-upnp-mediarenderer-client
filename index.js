@@ -144,7 +144,7 @@ MediaRendererClient.prototype.load = function(url, options, callback) {
 
   this.callAction('ConnectionManager', 'PrepareForConnection', params, function(err, result) {
     if(err) {
-      if(err.code !== 'ENOACTION') {
+      if( ! ['ENOACTION', 'EUPNP'].includes(err.code)) {
         return callback(err);
       }
       //
