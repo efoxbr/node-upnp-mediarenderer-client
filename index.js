@@ -256,11 +256,12 @@ function buildMetadata(metadata) {
   didl.set('xmlns:dc', 'http://purl.org/dc/elements/1.1/');
   didl.set('xmlns:upnp', 'urn:schemas-upnp-org:metadata-1-0/upnp/');
   didl.set('xmlns:sec', 'http://www.sec.co.kr/');
+  didl.set('xmlns:dlna', 'urn:schemas-dlna-org:device-1-0');
 
   var item = et.SubElement(didl, 'item');
   item.set('id', 0);
-  item.set('parentID', -1);
-  item.set('restricted', false);
+  item.set('parentID', 0);
+  item.set('restricted', 1);
 
   var OBJECT_CLASSES = {
     'audio': 'object.item.audioItem.musicTrack',
@@ -281,6 +282,29 @@ function buildMetadata(metadata) {
   if(metadata.creator) {
     var creator = et.SubElement(item, 'dc:creator');
     creator.text = metadata.creator;
+  }
+
+  if(metadata.type == "audio") {
+    if (metadata.album){
+      var album = et.SubElement(item, 'upnp:album');
+      album.text = metadata.album;
+    }
+    if (metadata.artist){
+      var artist = et.SubElement(item, 'upnp:artist');
+      artist.set('role','Performer') ;
+      artist.text = metadata.artist;
+    }
+  }
+
+  if(metadata.type == "audio" && metadata.url && metadata.protocolInfo) {
+    var res = et.SubElement(item, 'res');
+    res.set('protocolInfo', metadata.protocolInfo);
+    res.set('size','4294967295') ;
+    res.set('bitrate','176400') ;
+    res.set('sampleFrequency','44100');
+    res.set('bitsPerSample','16');
+    res.set('nrAudioChannels','2');
+    res.text = metadata.url;
   }
 
   if(metadata.url && metadata.protocolInfo) {
