@@ -189,8 +189,8 @@ MediaRendererClient.prototype.queue = function(url, options, callback) {
 
   var params = {
     InstanceID: self.instanceId,
-    CurrentURI: url,
-    CurrentURIMetaData: buildMetadata(metadata)
+    NextURI: url,
+    NextURIMetaData: buildMetadata(metadata)
   };
 
   self.callAction('AVTransport', 'SetNextAVTransportURI', params, function(err) {
@@ -323,16 +323,24 @@ function buildMetadata(metadata) {
     album.text = metadata.album;
   }
 
-  if(metadata.type == 'audio' && metadata.url && metadata.protocolInfo) {
+  if(metadata.genre) {
+    var genre = et.SubElement(item, 'upnp:genre');
+    genre.text = metadata.genre;
+  }
+
+  if(metadata.url) {
     var res = et.SubElement(item, 'res');
-    res.set('protocolInfo', metadata.protocolInfo);
+    if (metadata.protocolInfo) res.set('protocolInfo', metadata.protocolInfo);
+    if (metadata.filesize) res.set('size', metadata.filesize);
+    if (metadata.duration) res.set('duration', metadata.duration);
     res.text = metadata.url;
   }
 
-  if(metadata.url && metadata.protocolInfo) {
-    var res = et.SubElement(item, 'res');
-    res.set('protocolInfo', metadata.protocolInfo);
-    res.text = metadata.url;
+  if(metadata.albumArt) {
+    var art = et.SubElement(item, 'upnp:albumArtURI');
+    art.set('dlna:profileID', 'JPEG_TN');
+    art.set('xmlns:dlna', 'urn:schemas-dlna-org:metadata-1-0/');
+    art.text = metadata.albumArt;
   }
 
   if(metadata.subtitlesUrl) {
