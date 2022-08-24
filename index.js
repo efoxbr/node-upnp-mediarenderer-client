@@ -172,6 +172,34 @@ MediaRendererClient.prototype.load = function(url, options, callback) {
 };
 
 
+MediaRendererClient.prototype.queue = function(url, options, callback) {
+  var self = this;
+  if(typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  var dlnaFeatures = options.dlnaFeatures || '*';
+  var contentType = options.contentType || 'video/mpeg'; // Default to something generic
+  var protocolInfo = 'http-get:*:' + contentType + ':' + dlnaFeatures;
+
+  var metadata = options.metadata || {};
+  metadata.url = url;
+  metadata.protocolInfo = protocolInfo;
+
+  var params = {
+    InstanceID: self.instanceId,
+    NextURI: url,
+    NextURIMetaData: buildMetadata(metadata)
+  };
+
+  self.callAction('AVTransport', 'SetNextAVTransportURI', params, function(err) {
+    if(err) return callback(err);
+    callback();
+  });
+};
+
+
 MediaRendererClient.prototype.play = function(callback) {
   var params = {
     InstanceID: this.instanceId,
@@ -284,33 +312,35 @@ function buildMetadata(metadata) {
     creator.text = metadata.creator;
   }
 
-  if(metadata.type == "audio") {
-    if (metadata.album){
-      var album = et.SubElement(item, 'upnp:album');
-      album.text = metadata.album;
-    }
-    if (metadata.artist){
-      var artist = et.SubElement(item, 'upnp:artist');
-      artist.set('role','Performer') ;
-      artist.text = metadata.artist;
-    }
+  if(metadata.artist) {
+    var artist = et.SubElement(item, 'upnp:artist');
+    artist.set('role','Performer') ;
+    artist.text = metadata.artist;
   }
 
-  if(metadata.type == "audio" && metadata.url && metadata.protocolInfo) {
+  if(metadata.album) {
+    var album = et.SubElement(item, 'upnp:album');
+    album.text = metadata.album;
+  }
+
+  if(metadata.genre) {
+    var genre = et.SubElement(item, 'upnp:genre');
+    genre.text = metadata.genre;
+  }
+
+  if(metadata.url) {
     var res = et.SubElement(item, 'res');
-    res.set('protocolInfo', metadata.protocolInfo);
-    res.set('size','4294967295') ;
-    res.set('bitrate','176400') ;
-    res.set('sampleFrequency','44100');
-    res.set('bitsPerSample','16');
-    res.set('nrAudioChannels','2');
+    if (metadata.protocolInfo) res.set('protocolInfo', metadata.protocolInfo);
+    if (metadata.filesize) res.set('size', metadata.filesize);
+    if (metadata.duration) res.set('duration', metadata.duration);
     res.text = metadata.url;
   }
 
-  if(metadata.url && metadata.protocolInfo) {
-    var res = et.SubElement(item, 'res');
-    res.set('protocolInfo', metadata.protocolInfo);
-    res.text = metadata.url;
+  if(metadata.albumArt) {
+    var art = et.SubElement(item, 'upnp:albumArtURI');
+    art.set('dlna:profileID', 'JPEG_TN');
+    art.set('xmlns:dlna', 'urn:schemas-dlna-org:metadata-1-0/');
+    art.text = metadata.albumArt;
   }
 
   if(metadata.subtitlesUrl) {
